@@ -1,5 +1,8 @@
 import axios from "axios";
+import dotenv from 'dotenv';
+dotenv.config();
 const { GOOGLE_API_KEY } = process.env;
+
 async function fetchPlaceDetails(placeId: string) {
   const fields = [
     'name',
@@ -16,6 +19,7 @@ async function fetchPlaceDetails(placeId: string) {
     'business_status',
     'url'
   ].join(',');
+  console.log(`Fetching details for place ID: ${placeId}`);
 
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
   const res = await axios.get(url);

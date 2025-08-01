@@ -1,19 +1,35 @@
 import axios from "axios";
+import { BussinessDetails, GoogleData, TransformSchema } from "../type/index.dt";
+
+
+import dotenv from 'dotenv';
 import fetchPlaceDetails from "./fetchPlaceDetails";
 import writeToJson from "./writeToJson";
+import transformGoogleDataWithChatGPT from './transformGoogleDataWithChatGPT'
+dotenv.config();
 const { GOOGLE_API_KEY } = process.env;
 
 async function fetchBusinesses(query: string, location: string) {
+  // Log the input query and location with green color 
+  console.log(`✅ Fetching businesses for query: ${query} in location: ${location} google api key: ${GOOGLE_API_KEY}`);
   const encodedQuery = encodeURIComponent(`${query} in ${location}`);
   let url: string = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}`;
-  let results = [];
+  let results: BussinessDetails[] = [];
 
-  while (url) {
+  // I want to break loop after first 20 results
+  let flag = false;
+  // Loop to break aafter 5 records
+  let MAX_RESULTS = 1;
+  while (!flag) {
     const response = await axios.get(url);
     const data = response.data;
-
+    console.log(`📊 Fetched ${data.results.length} results from Google API`);
     for (const place of data.results) {
-      const details = await fetchPlaceDetails(place.place_id);
+      console.log(`🔍 Processing place: ${place.name}`);
+      const details = await fetchPlaceDetails(place.place_id) as GoogleData;
+
+
+      // console.log(`📍 Place details: ${JSON.stringify(details)}`);
       results.push({
         name: details.name,
         address: details.formatted_address,
@@ -31,18 +47,29 @@ async function fetchBusinesses(query: string, location: string) {
         types: details.types || null,
         photos: details.photos || null
       });
+      if (results.length >= MAX_RESULTS) {
+        flag = true; // Set flag to true to break the loop
+        break; // Stop after collecting 2 results
+      }
+
     }
 
     if (data.next_page_token && results.length % 20 === 0) {
       await new Promise(r => setTimeout(r, 2000)); // wait 2s for next page
       url = `https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken=${data.next_page_token}&key=${GOOGLE_API_KEY}`;
-    } else {
-       return results;
     }
   }
-  const fileName = `${location} ${new Date().toString()}.json`;
-  writeToJson(results, fileName);
-  return { fileName, resultsCount: results.length };
+  console.log(`✅ Fetched ${JSON.stringify(results.length)} businesses for query: ${query} in location: ${location}`);
+  const fileName = `${location.split(' ').join('_')} ${Math.random().toString()}.json`;
+  const transformedResults: TransformSchema[] = [];
+  for (const result of results) {
+    
+    const transformedResult = await transformGoogleDataWithChatGPT(result) as TransformSchema;
+    transformedResults.push(transformedResult);
+  }
+
+  await writeToJson(transformedResults, fileName);
+  return { fileName, resultsCount: results.length, transformedResults };
 }
 
 export default fetchBusinesses;
