@@ -1,4 +1,6 @@
 const OpenAI = require("openai");
+import dotenv from 'dotenv';
+dotenv.config();
 
 const { OPEN_AI_API_KEY, GOOGLE_API_KEY } = process.env;
 const openai = new OpenAI({
@@ -6,12 +8,13 @@ const openai = new OpenAI({
 });
 
 async function transformGoogleDataWithChatGPT<T>(googleData: T) {
-
+  
+  console.log("Transforming Google data with ChatGPT...");
 // Use this prompt in your transformGoogleDataWithChatGPT function
 const prompt = `
 You are an AI agent. Transform the following Google API response data into a JSON object matching the schema below.
 For each field, follow the instructions in the comments to extract or generate the value from the provided data.
-This prompt is generic and should work for Google API data from any location.
+This prompt is generic and should work for Google API data from any location. You can use GOOGLE_API_KEY as ${GOOGLE_API_KEY} to access Google APIs.
 
 Schema:
 {
@@ -47,7 +50,7 @@ Schema:
   a_to_b_endlng: number, // null
   start_address: string, // null
   end_address: string, // null
-  images: array // For each photo_reference, generate: https://maps.googleapis.com/maps/api/place/photo?photoreference={photo_reference}&key=${GOOGLE_API_KEY}
+  images: array // For each photo_reference, generate: https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_reference}&key={GOOGLE_API_KEY}// Replace {photo_reference} with actual photo reference and {GOOGLE_API_KEY} with GOOGLE API key
 }
 
 Google API Data:
@@ -71,4 +74,4 @@ Return only the transformed object in JSON format, matching the schema and comme
   }
 }
 
-module.exports = transformGoogleDataWithChatGPT;
+export default  transformGoogleDataWithChatGPT;
