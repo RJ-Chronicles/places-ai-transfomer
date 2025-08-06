@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { fetchBusinesses, readFiletoTransform, writeToJson, transformGoogleDataWithChatGPT } from './utils';
+import { fetchBusinesses } from './utils';
 dotenv.config();
 
 const app = express();
